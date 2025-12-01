@@ -5,29 +5,41 @@
  * with Search Grounding for real-time market data
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, DynamicRetrievalMode } from '@google/generative-ai';
 import { config } from '../config.js';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(config.geminiApiKey);
 
 /**
- * Generate daily market newsletter using Gemini 2.0 Flash
- * with Search Grounding for real-time market data
+ * Generate daily market newsletter using Gemini with Google Search grounding
  */
 export async function generateNewsletterContent(date) {
   try {
     console.log(`📝 Generating newsletter for ${date}...`);
 
-    // Use gemini-2.0-flash-exp model with search grounding
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-    });
+    // Use gemini-1.5-pro with search grounding (paid tier feature)
+    const model = genAI.getGenerativeModel(
+      {
+        model: 'gemini-1.5-pro-002',
+        tools: [
+          {
+            googleSearchRetrieval: {
+              dynamicRetrievalConfig: {
+                mode: DynamicRetrievalMode.MODE_DYNAMIC,
+                dynamicThreshold: 0.7,
+              },
+            },
+          },
+        ],
+      },
+      { apiVersion: 'v1beta' }
+    );
 
     // Prompt for daily market pulse newsletter
     const prompt = `You are a professional financial analyst writing the "Daily Market Pulse" newsletter for ${date}.
 
-TASK: Create a concise, actionable daily market summary for professional investors.
+TASK: Create a concise, actionable daily market summary for professional investors using real-time market data from today.
 
 STRUCTURE:
 1. **Hook** (1-2 sentences): Eye-catching opening that captures the day's most important market move
@@ -53,7 +65,7 @@ STYLE:
 - No hype or sensationalism
 - 500-700 words total
 
-IMPORTANT: Use real-time search to get TODAY's actual market data. Include specific numbers, percentages, and facts.
+IMPORTANT: Use Google Search to get TODAY's actual market data (${date}). Include specific numbers, percentages, and facts from real sources.
 
 Return ONLY a JSON object with this structure:
 {
@@ -77,16 +89,7 @@ Return ONLY a JSON object with this structure:
 }`;
 
     // Generate content with search grounding
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-        responseMimeType: 'application/json',
-      },
-    });
+    const result = await model.generateContent(prompt);
 
     const response = result.response;
     const text = response.text();
@@ -131,6 +134,11 @@ function extractGroundingSources(result) {
       });
     }
 
+    // Also check searchEntryPoint
+    if (groundingMetadata?.searchEntryPoint?.renderedContent) {
+      console.log('📚 Search entry point available');
+    }
+
     // Deduplicate sources
     const uniqueSources = Array.from(
       new Map(sources.map(s => [s.url, s])).values()
@@ -150,7 +158,7 @@ function extractGroundingSources(result) {
  */
 export async function testGeminiConnection() {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-002' });
     const result = await model.generateContent('Say "Hello from Gemini!"');
     const response = result.response.text();
     console.log('✅ Gemini connection test:', response);
