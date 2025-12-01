@@ -22,13 +22,6 @@ export async function generateNewsletterContent(date) {
     console.log('📝 Step 1: Generating content with Google Search...');
     
     // Step 1: Generate content with Google Search grounding
-    const searchModel = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      tools: [{
-        googleSearch: {}
-      }]
-    });
-
     const searchPrompt = `You are a financial market analyst writing a daily market newsletter called "Daily Market Pulse" for ${date}.
 
 Search for and analyze today's cryptocurrency and blockchain market developments, then write a comprehensive newsletter with the following structure:
@@ -64,16 +57,40 @@ Search for and analyze today's cryptocurrency and blockchain market developments
 
 Write the complete newsletter now:`;
 
-    const searchResult = await searchModel.generateContent(searchPrompt);
-    const rawContent = searchResult.response.text();
+    const searchResult = await genai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: searchPrompt,
+      config: {
+        tools: [{
+          googleSearch: {}
+        }]
+      }
+    });
+
+    const rawContent = searchResult.text;
     
     console.log('✅ Step 1 complete. Content length:', rawContent.length);
     console.log('📝 Step 2: Formatting as structured JSON...');
 
     // Step 2: Format the content as JSON
-    const formatModel = genai.getGenerativeModel({
+    const formatPrompt = `Convert the following newsletter content into structured JSON format.
+
+Extract:
+- Title (create one based on the date: ${date})
+- Hook (the opening 1-2 sentences)
+- Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
+- Conclusion (the closing summary)
+- Sources (extract any URLs or sources mentioned)
+
+Newsletter content:
+${rawContent}
+
+Return the structured JSON now:`;
+
+    const formatResult = await genai.models.generateContent({
       model: 'gemini-2.0-flash-exp',
-      generationConfig: {
+      contents: formatPrompt,
+      config: {
         responseMimeType: 'application/json',
         responseSchema: {
           type: 'object',
@@ -118,22 +135,7 @@ Write the complete newsletter now:`;
       }
     });
 
-    const formatPrompt = `Convert the following newsletter content into structured JSON format.
-
-Extract:
-- Title (create one based on the date: ${date})
-- Hook (the opening 1-2 sentences)
-- Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
-- Conclusion (the closing summary)
-- Sources (extract any URLs or sources mentioned)
-
-Newsletter content:
-${rawContent}
-
-Return the structured JSON now:`;
-
-    const formatResult = await formatModel.generateContent(formatPrompt);
-    const jsonText = formatResult.response.text();
+    const jsonText = formatResult.text;
     const structured = JSON.parse(jsonText);
 
     console.log('✅ Step 2 complete. Structured newsletter generated.');
@@ -157,9 +159,11 @@ Return the structured JSON now:`;
  */
 export async function testGeminiConnection() {
   try {
-    const model = genai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    const result = await model.generateContent('Say "Hello from Gemini!"');
-    console.log('✅ Gemini connection test:', result.response.text());
+    const result = await genai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: 'Say "Hello from Gemini!"'
+    });
+    console.log('✅ Gemini connection test:', result.text);
     return true;
   } catch (error) {
     console.error('❌ Gemini connection test failed:', error);
