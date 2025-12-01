@@ -5,14 +5,14 @@
  */
 
 import pg from 'pg';
-import config from '../config.js';
+import { config } from '../config.js';
 
 const { Pool } = pg;
 
 // Create connection pool
 const pool = new Pool({
-  connectionString: config.database.url,
-  ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
+  connectionString: config.databaseUrl,
+  ssl: { rejectUnauthorized: false },
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
@@ -32,7 +32,9 @@ pool.on('error', (err) => {
  */
 export const Newsletter = {
   /**
-   * Create a new newsletter
+   * Create or update newsletter (UPSERT)
+   * If a newsletter already exists for the same publish_date, it will be updated.
+   * This ensures only the latest newsletter is kept for each day.
    */
   async create(data) {
     const query = `
@@ -41,6 +43,18 @@ export const Newsletter = {
         audio_url, audio_duration_seconds, generation_status, error_message
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ON CONFLICT (publish_date)
+      DO UPDATE SET
+        title = EXCLUDED.title,
+        hook = EXCLUDED.hook,
+        sections = EXCLUDED.sections,
+        conclusion = EXCLUDED.conclusion,
+        sources = EXCLUDED.sources,
+        audio_url = EXCLUDED.audio_url,
+        audio_duration_seconds = EXCLUDED.audio_duration_seconds,
+        generation_status = EXCLUDED.generation_status,
+        error_message = EXCLUDED.error_message,
+        updated_at = NOW()
       RETURNING *
     `;
     
