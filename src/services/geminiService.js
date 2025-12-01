@@ -1,7 +1,7 @@
 /**
  * Gemini AI Service
  * 
- * Handles newsletter content generation using Google Gemini 2.0 Flash
+ * Handles newsletter content generation using Google Gemini 2.5 Flash
  * with Google Search grounding for real-time market data
  * 
  * Two-step approach:
@@ -77,7 +77,7 @@ export async function generateNewsletterContent(date) {
 Write the complete newsletter now:`;
 
     const searchResult = await genai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       contents: searchPrompt,
       config: {
         tools: [{
@@ -88,7 +88,16 @@ Write the complete newsletter now:`;
 
     const rawContent = searchResult.text;
     
+    // Extract grounding metadata sources
+    const groundingSources = searchResult.candidates?.[0]?.groundingMetadata?.groundingChunks
+      ?.map(chunk => ({
+        url: chunk.web?.uri,
+        title: chunk.web?.title
+      }))
+      .filter(source => source.url) || [];
+    
     console.log('✅ Step 1 complete. Content length:', rawContent.length);
+    console.log('📚 Found', groundingSources.length, 'grounding sources');
     console.log('📝 Step 2: Formatting as structured JSON...');
 
     // Step 2: Format the content as JSON
@@ -99,15 +108,16 @@ Extract:
 - Hook (the opening 1-2 sentences)
 - Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
 - Conclusion (the closing summary)
-- Sources (extract any URLs or sources mentioned)
 
 Newsletter content:
 ${rawContent}
 
+Note: We already have grounding sources from Google Search, so don't extract sources from the text.
+
 Return the structured JSON now:`;
 
     const formatResult = await genai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       contents: formatPrompt,
       config: {
         responseMimeType: 'application/json',
@@ -164,7 +174,7 @@ Return the structured JSON now:`;
       hook: structured.hook || '',
       sections: structured.sections || [],
       conclusion: structured.conclusion || '',
-      sources: structured.sources || []
+      sources: groundingSources // Use grounding metadata sources instead of extracted sources
     };
 
   } catch (error) {
@@ -179,7 +189,7 @@ Return the structured JSON now:`;
 export async function testGeminiConnection() {
   try {
     const result = await genai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       contents: 'Say "Hello from Gemini!"'
     });
     console.log('✅ Gemini connection test:', result.text);

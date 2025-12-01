@@ -38,7 +38,7 @@ export async function generateNewsletterAudio(newsletter, outputPath) {
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName: 'Kore', // Professional male voice
+              voiceName: 'Fenrir', // Deep, authoritative male voice
             }
           }
         }
