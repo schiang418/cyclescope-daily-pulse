@@ -1,144 +1,154 @@
 /**
  * Gemini AI Service
  * 
- * Handles newsletter content generation using Google Gemini API
- * with Search Grounding for real-time market data
+ * Handles newsletter content generation using Google Gemini 2.0 Flash
+ * with Google Search grounding for real-time market data
  * 
- * Using @google/genai SDK (new, supports Gemini 2.0+)
+ * Two-step approach:
+ * 1. Search + Generate (with Google Search tool)
+ * 2. Format as JSON (without tools, using JSON mode)
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/genai';
 import { config } from '../config.js';
 
-// Initialize Gemini AI
-const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+const genai = new GoogleGenerativeAI({ apiKey: config.geminiApiKey });
 
 /**
- * Generate daily market newsletter using Gemini with Google Search grounding
+ * Generate newsletter content with Google Search grounding
  */
 export async function generateNewsletterContent(date) {
   try {
-    console.log(`📝 Generating newsletter for ${date}...`);
-
-    // Prompt for daily market pulse newsletter
-    const prompt = `You are a professional financial analyst writing the "Daily Market Pulse" newsletter for ${date}.
-
-TASK: Create a concise, actionable daily market summary for professional investors using real-time market data from today.
-
-STRUCTURE:
-1. **Hook** (1-2 sentences): Eye-catching opening that captures the day's most important market move
-2. **Section 1: Market Overview** (2-3 paragraphs):
-   - Major index performance (S&P 500, Nasdaq, Dow)
-   - Key sector movers
-   - Market breadth and sentiment
-3. **Section 2: Key Drivers** (2-3 paragraphs):
-   - Economic data releases
-   - Fed/central bank news
-   - Geopolitical events
-   - Corporate earnings highlights
-4. **Section 3: What to Watch** (1-2 paragraphs):
-   - Upcoming catalysts
-   - Technical levels to monitor
-   - Risk factors
-5. **Conclusion** (1-2 sentences): Bottom-line takeaway for investors
-
-STYLE:
-- Professional but conversational
-- Data-driven with specific numbers
-- Actionable insights
-- No hype or sensationalism
-- 500-700 words total
-
-IMPORTANT: Use Google Search to get TODAY's actual market data (${date}). Include specific numbers, percentages, and facts from real sources.
-
-Return ONLY a JSON object with this structure:
-{
-  "title": "Daily Market Pulse - [Date]",
-  "hook": "Opening paragraph text",
-  "sections": [
-    {
-      "heading": "Market Overview",
-      "content": "Section content with real data..."
-    },
-    {
-      "heading": "Key Drivers",
-      "content": "Section content..."
-    },
-    {
-      "heading": "What to Watch",
-      "content": "Section content..."
-    }
-  ],
-  "conclusion": "Closing paragraph text"
-}`;
-
-    // Generate content with Google Search grounding
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        tools: [
-          {
-            googleSearch: {} // Enable Google Search grounding (new API)
-          }
-        ],
-        responseMimeType: 'application/json',
-        temperature: 0.7,
-      },
+    console.log('📝 Step 1: Generating content with Google Search...');
+    
+    // Step 1: Generate content with Google Search grounding
+    const searchModel = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      tools: [{
+        googleSearch: {}
+      }]
     });
 
-    const text = response.text;
-    console.log('✅ Newsletter content generated');
+    const searchPrompt = `You are a financial market analyst writing a daily market newsletter called "Daily Market Pulse" for ${date}.
 
-    // Parse JSON response
-    const newsletter = JSON.parse(text);
+Search for and analyze today's cryptocurrency and blockchain market developments, then write a comprehensive newsletter with the following structure:
 
-    // Extract grounding sources (if available)
-    const sources = extractGroundingSources(response);
+1. **Hook** (1-2 sentences): Attention-grabbing opening that highlights the most significant market movement or news
+
+2. **Market Overview** (150-200 words): 
+   - Major cryptocurrency price movements (BTC, ETH, etc.)
+   - Overall market sentiment and trends
+   - Trading volume and market cap changes
+
+3. **Key Developments** (150-200 words):
+   - Significant news events (regulations, partnerships, launches)
+   - Notable on-chain metrics or data
+   - Institutional activity or major transactions
+
+4. **Technical Analysis** (100-150 words):
+   - Key support and resistance levels
+   - Important technical indicators
+   - Short-term price outlook
+
+5. **Conclusion** (50-100 words): 
+   - Summary of key takeaways
+   - What to watch for tomorrow
+   - Brief outlook
+
+**Requirements**:
+- Use real-time data from Google Search
+- Total length: 500-700 words
+- Professional, informative tone
+- Include specific numbers and data points
+- Cite sources when mentioning specific data
+
+Write the complete newsletter now:`;
+
+    const searchResult = await searchModel.generateContent(searchPrompt);
+    const rawContent = searchResult.response.text();
+    
+    console.log('✅ Step 1 complete. Content length:', rawContent.length);
+    console.log('📝 Step 2: Formatting as structured JSON...');
+
+    // Step 2: Format the content as JSON
+    const formatModel = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Newsletter title, e.g., "Daily Market Pulse - December 1, 2025"'
+            },
+            hook: {
+              type: 'string',
+              description: 'Opening hook (1-2 sentences)'
+            },
+            sections: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  heading: { type: 'string' },
+                  content: { type: 'string' }
+                },
+                required: ['heading', 'content']
+              }
+            },
+            conclusion: {
+              type: 'string',
+              description: 'Closing summary and outlook'
+            },
+            sources: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  url: { type: 'string' }
+                }
+              },
+              description: 'List of sources cited (if any)'
+            }
+          },
+          required: ['title', 'hook', 'sections', 'conclusion']
+        }
+      }
+    });
+
+    const formatPrompt = `Convert the following newsletter content into structured JSON format.
+
+Extract:
+- Title (create one based on the date: ${date})
+- Hook (the opening 1-2 sentences)
+- Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
+- Conclusion (the closing summary)
+- Sources (extract any URLs or sources mentioned)
+
+Newsletter content:
+${rawContent}
+
+Return the structured JSON now:`;
+
+    const formatResult = await formatModel.generateContent(formatPrompt);
+    const jsonText = formatResult.response.text();
+    const structured = JSON.parse(jsonText);
+
+    console.log('✅ Step 2 complete. Structured newsletter generated.');
 
     return {
-      ...newsletter,
-      sources,
+      title: structured.title || `Daily Market Pulse - ${date}`,
+      hook: structured.hook || '',
+      sections: structured.sections || [],
+      conclusion: structured.conclusion || '',
+      sources: structured.sources || []
     };
 
   } catch (error) {
-    console.error('❌ Failed to generate newsletter:', error);
+    console.error('❌ Gemini API error:', error);
     throw new Error(`Newsletter generation failed: ${error.message}`);
-  }
-}
-
-/**
- * Extract grounding sources from Gemini response
- */
-function extractGroundingSources(response) {
-  const sources = [];
-  
-  try {
-    // Check if grounding metadata exists
-    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-    
-    if (groundingMetadata?.groundingChunks) {
-      groundingMetadata.groundingChunks.forEach(chunk => {
-        if (chunk.web?.uri) {
-          sources.push({
-            url: chunk.web.uri,
-            title: chunk.web.title || 'Source',
-          });
-        }
-      });
-    }
-
-    // Deduplicate sources
-    const uniqueSources = Array.from(
-      new Map(sources.map(s => [s.url, s])).values()
-    );
-
-    console.log(`📚 Found ${uniqueSources.length} grounding sources`);
-    return uniqueSources;
-
-  } catch (error) {
-    console.warn('⚠️ Could not extract grounding sources:', error.message);
-    return [];
   }
 }
 
@@ -147,11 +157,9 @@ function extractGroundingSources(response) {
  */
 export async function testGeminiConnection() {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: 'Say "Hello from Gemini!"',
-    });
-    console.log('✅ Gemini connection test:', response.text);
+    const model = genai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const result = await model.generateContent('Say "Hello from Gemini!"');
+    console.log('✅ Gemini connection test:', result.response.text());
     return true;
   } catch (error) {
     console.error('❌ Gemini connection test failed:', error);
