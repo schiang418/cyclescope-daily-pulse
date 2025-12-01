@@ -1,0 +1,32 @@
+{
+  "name": "cyclescope-daily-pulse",
+  "version": "1.0.0",
+  "description": "Daily market newsletter generation service powered by Google Gemini AI",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node scripts/migrate.mjs",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "newsletter",
+    "market",
+    "gemini",
+    "tts",
+    "cyclescope"
+  ],
+  "author": "CycleScope",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}
