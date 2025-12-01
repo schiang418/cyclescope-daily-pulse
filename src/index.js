@@ -1,15 +1,22 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { config, validateConfig } from './config.js';
 import { logger } from './utils/logger.js';
 import { errorHandler } from './utils/error-handler.js';
+import newsletterRoutes from './routes/newsletter.js';
+import { ensureAudioStorageExists } from './services/newsletterService.js';
 
 // Validate configuration on startup
 try {
   validateConfig();
   logger.success('Configuration validated successfully');
+  
+  // Ensure audio storage directory exists
+  await ensureAudioStorageExists();
+  
 } catch (error) {
-  logger.error('Configuration validation failed:', error.message);
+  logger.error('Startup failed:', error.message);
   process.exit(1);
 }
 
@@ -56,8 +63,14 @@ app.get('/', (req, res) => {
   });
 });
 
-// API routes (to be added in later phases)
-// app.use('/api/newsletter', newsletterRoutes);
+// Serve audio files from storage
+const audioDir = config.useS3
+  ? '/tmp/audio'
+  : path.join(config.railwayVolumePath, 'audio');
+app.use('/audio', express.static(audioDir));
+
+// API routes
+app.use('/api/newsletter', newsletterRoutes);
 
 // 404 handler
 app.use((req, res) => {
