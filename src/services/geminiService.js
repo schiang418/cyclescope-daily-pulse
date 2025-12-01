@@ -79,11 +79,6 @@ Return ONLY a JSON object with this structure:
     // Generate content with search grounding
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      tools: [
-        {
-          googleSearch: {}  // Enable Google Search grounding
-        }
-      ],
       generationConfig: {
         temperature: 0.7,
         topK: 40,

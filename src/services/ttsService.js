@@ -28,42 +28,17 @@ export async function generateNewsletterAudio(newsletter, outputPath) {
     
     console.log(`📝 Audio script length: ${fullText.length} characters`);
 
-    // Use Gemini's text-to-speech model
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-    });
-
-    // Generate audio using Gemini
-    // Note: Gemini 2.0 Flash supports multimodal output including audio
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `Convert the following market newsletter to natural-sounding speech. Use a professional, clear voice suitable for financial news:
-
-${fullText}`
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        // Request audio output
-        responseMimeType: 'audio/wav',
-      },
-    });
-
-    // Get audio data from response
-    const audioData = await result.response.arrayBuffer();
+    // Note: Gemini TTS is not yet available in the SDK
+    // For now, create a placeholder audio file
+    // TODO: Integrate with actual TTS service (Google Cloud TTS, ElevenLabs, etc.)
+    console.log('⚠️  Gemini TTS not yet available, creating placeholder audio...');
     
     // Ensure output directory exists
     const outputDir = path.dirname(outputPath);
     await fs.mkdir(outputDir, { recursive: true });
 
-    // Save audio file
-    await fs.writeFile(outputPath, Buffer.from(audioData));
+    // Create placeholder audio file
+    await createPlaceholderAudio(outputPath);
     
     console.log(`✅ Audio saved to: ${outputPath}`);
 
@@ -78,16 +53,7 @@ ${fullText}`
 
   } catch (error) {
     console.error('❌ Failed to generate audio:', error);
-    
-    // Fallback: Create a placeholder audio file
-    console.log('⚠️ Creating placeholder audio file...');
-    await createPlaceholderAudio(outputPath);
-    
-    return {
-      audioPath: outputPath,
-      durationSeconds: 0,
-      error: error.message,
-    };
+    throw error;
   }
 }
 
