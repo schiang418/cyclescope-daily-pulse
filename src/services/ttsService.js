@@ -2,15 +2,16 @@
  * Text-to-Speech Service
  * 
  * Converts newsletter text to audio using Gemini 2.5 Flash TTS
+ * Using @google/genai SDK (new, supports Gemini 2.0+)
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 import fs from 'fs/promises';
 import path from 'path';
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
 /**
  * Generate audio from newsletter content using Gemini 2.5 Flash TTS
@@ -28,28 +29,11 @@ export async function generateNewsletterAudio(newsletter, outputPath) {
     
     console.log(`📝 Audio script length: ${fullText.length} characters`);
 
-    // Use Gemini 2.5 Flash TTS model
-    const model = genAI.getGenerativeModel(
-      {
-        model: 'gemini-2.5-flash-preview-tts',
-      },
-      { apiVersion: 'v1beta' }
-    );
-
-    // Generate audio with TTS
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `Read the following market newsletter in a professional, clear voice suitable for financial news. Use a conversational but authoritative tone:\n\n${fullText}`
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.7,
+    // Generate audio with Gemini TTS
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-preview-tts',
+      contents: `Read the following market newsletter in a professional, clear voice suitable for financial news. Use a conversational but authoritative tone:\n\n${fullText}`,
+      config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
@@ -62,7 +46,7 @@ export async function generateNewsletterAudio(newsletter, outputPath) {
     });
 
     // Extract audio data from response
-    const audioData = result.response.candidates[0].content.parts[0].inlineData.data;
+    const audioData = response.candidates[0].content.parts[0].inlineData.data;
     
     // Decode base64 audio data
     const audioBuffer = Buffer.from(audioData, 'base64');

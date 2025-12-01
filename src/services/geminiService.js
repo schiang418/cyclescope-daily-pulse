@@ -3,13 +3,15 @@
  * 
  * Handles newsletter content generation using Google Gemini API
  * with Search Grounding for real-time market data
+ * 
+ * Using @google/genai SDK (new, supports Gemini 2.0+)
  */
 
-import { GoogleGenerativeAI, DynamicRetrievalMode } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
 /**
  * Generate daily market newsletter using Gemini with Google Search grounding
@@ -17,24 +19,6 @@ const genAI = new GoogleGenerativeAI(config.geminiApiKey);
 export async function generateNewsletterContent(date) {
   try {
     console.log(`📝 Generating newsletter for ${date}...`);
-
-    // Use gemini-1.5-pro with search grounding (paid tier feature)
-    const model = genAI.getGenerativeModel(
-      {
-        model: 'gemini-1.5-pro-002',
-        tools: [
-          {
-            googleSearchRetrieval: {
-              dynamicRetrievalConfig: {
-                mode: DynamicRetrievalMode.MODE_DYNAMIC,
-                dynamicThreshold: 0.7,
-              },
-            },
-          },
-        ],
-      },
-      { apiVersion: 'v1beta' }
-    );
 
     // Prompt for daily market pulse newsletter
     const prompt = `You are a professional financial analyst writing the "Daily Market Pulse" newsletter for ${date}.
@@ -88,19 +72,29 @@ Return ONLY a JSON object with this structure:
   "conclusion": "Closing paragraph text"
 }`;
 
-    // Generate content with search grounding
-    const result = await model.generateContent(prompt);
+    // Generate content with Google Search grounding
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        tools: [
+          {
+            googleSearch: {} // Enable Google Search grounding (new API)
+          }
+        ],
+        responseMimeType: 'application/json',
+        temperature: 0.7,
+      },
+    });
 
-    const response = result.response;
-    const text = response.text();
-    
+    const text = response.text;
     console.log('✅ Newsletter content generated');
 
     // Parse JSON response
     const newsletter = JSON.parse(text);
 
     // Extract grounding sources (if available)
-    const sources = extractGroundingSources(result);
+    const sources = extractGroundingSources(response);
 
     return {
       ...newsletter,
@@ -116,12 +110,12 @@ Return ONLY a JSON object with this structure:
 /**
  * Extract grounding sources from Gemini response
  */
-function extractGroundingSources(result) {
+function extractGroundingSources(response) {
   const sources = [];
   
   try {
     // Check if grounding metadata exists
-    const groundingMetadata = result.response.candidates?.[0]?.groundingMetadata;
+    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
     
     if (groundingMetadata?.groundingChunks) {
       groundingMetadata.groundingChunks.forEach(chunk => {
@@ -132,11 +126,6 @@ function extractGroundingSources(result) {
           });
         }
       });
-    }
-
-    // Also check searchEntryPoint
-    if (groundingMetadata?.searchEntryPoint?.renderedContent) {
-      console.log('📚 Search entry point available');
     }
 
     // Deduplicate sources
@@ -158,10 +147,11 @@ function extractGroundingSources(result) {
  */
 export async function testGeminiConnection() {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-002' });
-    const result = await model.generateContent('Say "Hello from Gemini!"');
-    const response = result.response.text();
-    console.log('✅ Gemini connection test:', response);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: 'Say "Hello from Gemini!"',
+    });
+    console.log('✅ Gemini connection test:', response.text);
     return true;
   } catch (error) {
     console.error('❌ Gemini connection test failed:', error);
