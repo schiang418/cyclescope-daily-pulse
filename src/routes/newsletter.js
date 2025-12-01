@@ -85,7 +85,7 @@ router.get('/latest', async (req, res) => {
 
     res.json({
       success: true,
-      newsletter: formatNewsletterResponse(newsletter),
+      newsletter: formatNewsletterResponse(newsletter, req),
     });
 
   } catch (error) {
@@ -118,7 +118,7 @@ router.get('/:date', async (req, res) => {
 
     res.json({
       success: true,
-      newsletter: formatNewsletterResponse(newsletter),
+      newsletter: formatNewsletterResponse(newsletter, req),
     });
 
   } catch (error) {
@@ -147,7 +147,7 @@ router.get('/history', async (req, res) => {
     res.json({
       success: true,
       count: newsletters.length,
-      newsletters: newsletters.map(formatNewsletterResponse),
+      newsletters: newsletters.map(n => formatNewsletterResponse(n, req)),
     });
 
   } catch (error) {
@@ -161,8 +161,20 @@ router.get('/history', async (req, res) => {
 
 /**
  * Format newsletter for API response
+ * Fixes audio URL to use correct public domain
  */
-function formatNewsletterResponse(newsletter) {
+function formatNewsletterResponse(newsletter, req) {
+  // Fix audio URL if it's localhost
+  let audioUrl = newsletter.audio_url;
+  if (audioUrl && audioUrl.includes('localhost')) {
+    // Extract the audio filename from the URL
+    const audioFileName = audioUrl.split('/').pop();
+    // Build correct public URL using request host
+    const protocol = req.protocol || 'https';
+    const host = req.get('host');
+    audioUrl = `${protocol}://${host}/audio/${audioFileName}`;
+  }
+
   return {
     id: newsletter.id,
     publish_date: newsletter.publish_date,
@@ -171,7 +183,7 @@ function formatNewsletterResponse(newsletter) {
     sections: newsletter.sections,
     conclusion: newsletter.conclusion,
     sources: newsletter.sources,
-    audio_url: newsletter.audio_url,
+    audio_url: audioUrl,
     audio_duration_seconds: newsletter.audio_duration_seconds,
     generation_status: newsletter.generation_status,
     created_at: newsletter.created_at,
