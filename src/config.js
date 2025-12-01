@@ -8,7 +8,8 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   
   // Database
-  databaseUrl: process.env.DATABASE_URL,
+  // Railway uses DATABASE_PUBLIC_URL or DATABASE_PRIVATE_URL
+  databaseUrl: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_PRIVATE_URL,
   
   // Gemini API
   geminiApiKey: process.env.GEMINI_API_KEY,
