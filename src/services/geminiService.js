@@ -9,10 +9,10 @@
  * 2. Format as JSON (without tools, using JSON mode)
  */
 
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 
-const genai = new GoogleGenerativeAI({ apiKey: config.geminiApiKey });
+const genai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
 /**
  * Generate newsletter content with Google Search grounding
