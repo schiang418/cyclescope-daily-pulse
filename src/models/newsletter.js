@@ -1,0 +1,172 @@
+/**
+ * Newsletter Database Model
+ * 
+ * Provides CRUD operations for daily_newsletters table
+ */
+
+import pg from 'pg';
+import config from '../config.js';
+
+const { Pool } = pg;
+
+// Create connection pool
+const pool = new Pool({
+  connectionString: config.database.url,
+  ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
+
+// Test connection on startup
+pool.on('connect', () => {
+  console.log('✅ Database pool connected');
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Unexpected database error:', err);
+});
+
+/**
+ * Newsletter Model
+ */
+export const Newsletter = {
+  /**
+   * Create a new newsletter
+   */
+  async create(data) {
+    const query = `
+      INSERT INTO daily_newsletters (
+        publish_date, title, hook, sections, conclusion, sources,
+        audio_url, audio_duration_seconds, generation_status, error_message
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
+    
+    const values = [
+      data.publish_date,
+      data.title,
+      data.hook,
+      JSON.stringify(data.sections || []),
+      data.conclusion,
+      JSON.stringify(data.sources || []),
+      data.audio_url || null,
+      data.audio_duration_seconds || null,
+      data.generation_status || 'pending',
+      data.error_message || null,
+    ];
+
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  },
+
+  /**
+   * Get newsletter by publish date
+   */
+  async getByDate(publishDate) {
+    const query = `
+      SELECT * FROM daily_newsletters
+      WHERE publish_date = $1
+    `;
+    const result = await pool.query(query, [publishDate]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Get latest newsletter
+   */
+  async getLatest() {
+    const query = `
+      SELECT * FROM daily_newsletters
+      WHERE generation_status = 'complete'
+      ORDER BY publish_date DESC
+      LIMIT 1
+    `;
+    const result = await pool.query(query);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Get newsletter history (last N days)
+   */
+  async getHistory(limit = 30) {
+    const query = `
+      SELECT * FROM daily_newsletters
+      WHERE generation_status = 'complete'
+      ORDER BY publish_date DESC
+      LIMIT $1
+    `;
+    const result = await pool.query(query, [limit]);
+    return result.rows;
+  },
+
+  /**
+   * Update newsletter
+   */
+  async update(publishDate, data) {
+    const fields = [];
+    const values = [];
+    let paramIndex = 1;
+
+    // Build dynamic UPDATE query
+    Object.entries(data).forEach(([key, value]) => {
+      if (key === 'sections' || key === 'sources') {
+        fields.push(`${key} = $${paramIndex}`);
+        values.push(JSON.stringify(value));
+      } else {
+        fields.push(`${key} = $${paramIndex}`);
+        values.push(value);
+      }
+      paramIndex++;
+    });
+
+    values.push(publishDate);
+
+    const query = `
+      UPDATE daily_newsletters
+      SET ${fields.join(', ')}
+      WHERE publish_date = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, values);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Delete newsletter
+   */
+  async delete(publishDate) {
+    const query = `
+      DELETE FROM daily_newsletters
+      WHERE publish_date = $1
+      RETURNING *
+    `;
+    const result = await pool.query(query, [publishDate]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Check if newsletter exists for date
+   */
+  async exists(publishDate) {
+    const query = `
+      SELECT EXISTS(
+        SELECT 1 FROM daily_newsletters
+        WHERE publish_date = $1
+      ) as exists
+    `;
+    const result = await pool.query(query, [publishDate]);
+    return result.rows[0].exists;
+  },
+
+  /**
+   * Get database pool (for advanced queries)
+   */
+  getPool() {
+    return pool;
+  },
+};
+
+export default Newsletter;
