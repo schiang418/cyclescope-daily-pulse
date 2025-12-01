@@ -10,6 +10,8 @@ import { config } from '../config.js';
 const { Pool } = pg;
 
 // Create connection pool
+console.log('🔍 Database URL:', config.databaseUrl ? 'SET' : 'UNDEFINED');
+console.log('🔍 Database URL length:', config.databaseUrl?.length);
 const pool = new Pool({
   connectionString: config.databaseUrl,
   ssl: { rejectUnauthorized: false },
