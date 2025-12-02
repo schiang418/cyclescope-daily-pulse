@@ -151,7 +151,7 @@ export const Newsletter = {
   },
 
   /**
-   * Delete newsletter
+   * Delete newsletter by publish_date
    */
   async delete(publishDate) {
     const query = `
@@ -160,6 +160,19 @@ export const Newsletter = {
       RETURNING *
     `;
     const result = await pool.query(query, [publishDate]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Delete newsletter by ID
+   */
+  async deleteById(id) {
+    const query = `
+      DELETE FROM daily_newsletters
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await pool.query(query, [id]);
     return result.rows[0] || null;
   },
 

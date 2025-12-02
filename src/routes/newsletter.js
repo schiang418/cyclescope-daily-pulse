@@ -192,3 +192,56 @@ function formatNewsletterResponse(newsletter, req) {
 }
 
 export default router;
+
+
+/**
+ * DELETE /api/newsletter/:id
+ * Delete a newsletter by ID (admin only)
+ * Requires API key authentication
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    // API key authentication
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== process.env.API_SECRET_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid newsletter ID' });
+    }
+
+    // Import Newsletter model
+    const { Newsletter } = await import('../models/newsletter.js');
+    
+    // Check if newsletter exists
+    const existing = await Newsletter.getById(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Newsletter not found' });
+    }
+
+    // Delete the newsletter
+    await Newsletter.deleteById(id);
+
+    res.json({
+      success: true,
+      message: `Newsletter ID ${id} deleted successfully`,
+      deleted: {
+        id: existing.id,
+        title: existing.title,
+        publish_date: existing.publish_date,
+      },
+    });
+
+  } catch (error) {
+    console.error('❌ Delete newsletter error:', error);
+    res.status(500).json({
+      error: 'Failed to delete newsletter',
+      message: error.message,
+    });
+  }
+});
+
+export default router;
