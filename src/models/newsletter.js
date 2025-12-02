@@ -96,7 +96,7 @@ export const Newsletter = {
     const query = `
       SELECT * FROM daily_newsletters
       WHERE generation_status = 'complete'
-      ORDER BY publish_date DESC
+      ORDER BY created_at DESC
       LIMIT 1
     `;
     const result = await pool.query(query);
