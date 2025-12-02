@@ -21,12 +21,14 @@ import fs from 'fs/promises';
  * @returns {Object} - Newsletter record from database
  */
 export async function generateDailyNewsletter(date) {
-  console.log(`\n🚀 Starting newsletter generation for ${date}...`);
+  // Always use today's date for publish_date
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`\n🚀 Starting newsletter generation for ${today}...`);
   
   try {
     // Step 1: Update status to 'generating'
     await Newsletter.create({
-      publish_date: date,
+      publish_date: today,
       title: `Generating newsletter for ${date}...`,
       hook: '',
       sections: [],
@@ -52,7 +54,7 @@ export async function generateDailyNewsletter(date) {
     // Step 5: Save complete newsletter to database
     console.log('\n💾 Step 3: Saving to database...');
     const newsletter = await Newsletter.create({
-      publish_date: date,
+      publish_date: today,
       title: content.title,
       hook: content.hook,
       sections: content.sections,
@@ -77,7 +79,7 @@ export async function generateDailyNewsletter(date) {
 
     // Save error to database
     await Newsletter.create({
-      publish_date: date,
+      publish_date: today,
       title: `Failed to generate newsletter for ${date}`,
       hook: '',
       sections: [],
