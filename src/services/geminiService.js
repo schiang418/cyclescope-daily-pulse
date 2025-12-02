@@ -114,7 +114,7 @@ Write the complete newsletter now:`;
     const formatPrompt = `Convert the following newsletter content into structured JSON format.
 
 Extract:
-- Title (create a compelling title in format: "Daily Market Pulse - [Date]: [Main Market Story/Theme]". Example: "Daily Market Pulse - December 3, 2025: Bitcoin Surges Past $100K as Institutional Demand Soars")
+- Title (create a compelling title in format: "[Main Market Story/Theme]". Example: "Bitcoin Surges Past $100K as Institutional Demand Soars" or "Crypto Markets Plunge as Bitcoin Breaks Key Support Levels Amid Extreme Fear")
 - Hook (the opening 1-2 sentences)
 - Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
 - Conclusion (the closing summary)
@@ -136,7 +136,7 @@ Return the structured JSON now:`;
           properties: {
             title: {
               type: 'string',
-              description: 'Newsletter title with date and main market theme, e.g., "Daily Market Pulse - December 1, 2025: Crypto Markets Rally on Fed Rate Cut Hopes"'
+              description: 'Newsletter title with main market theme (no date prefix), e.g., "Crypto Markets Rally on Fed Rate Cut Hopes" or "Bitcoin Breaks $100K Barrier"'
             },
             hook: {
               type: 'string',
@@ -180,7 +180,7 @@ Return the structured JSON now:`;
     console.log('✅ Step 2 complete. Structured newsletter generated.');
 
     return {
-      title: structured.title || `Daily Market Pulse - ${date}`,
+      title: structured.title || `Market Analysis for ${date}`,
       hook: structured.hook || '',
       sections: structured.sections || [],
       conclusion: structured.conclusion || '',
