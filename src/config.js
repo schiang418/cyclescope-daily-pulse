@@ -17,7 +17,10 @@ export const config = {
   // Storage
   useS3: process.env.USE_S3 === 'true',
   railwayVolumePath: process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data',
-  publicUrl: process.env.PUBLIC_URL || 'http://localhost:3001',
+  publicUrl: process.env.PUBLIC_URL || 
+    (process.env.RAILWAY_PUBLIC_DOMAIN 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
+      : 'http://localhost:3001'),
   
   // AWS S3 (optional)
   aws: {
