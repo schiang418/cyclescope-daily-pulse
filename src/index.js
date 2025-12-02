@@ -26,8 +26,8 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: config.allowedOrigins,
-  credentials: true,
+  origin: '*', // Allow all origins for public API
+  credentials: false,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
