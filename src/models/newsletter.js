@@ -186,3 +186,41 @@ export const Newsletter = {
 };
 
 export default Newsletter;
+
+  /**
+   * Get all newsletters
+   */
+  async getAll() {
+    const query = `
+      SELECT * FROM daily_newsletters
+      ORDER BY publish_date DESC
+    `;
+    const result = await pool.query(query);
+    return result.rows;
+  },
+
+  /**
+   * Get newsletters older than a specific date
+   */
+  async getOlderThan(date) {
+    const query = `
+      SELECT * FROM daily_newsletters
+      WHERE publish_date < $1
+      ORDER BY publish_date ASC
+    `;
+    const result = await pool.query(query, [date]);
+    return result.rows;
+  },
+
+  /**
+   * Delete newsletters older than a specific date
+   * Returns the number of deleted records
+   */
+  async deleteOlderThan(date) {
+    const query = `
+      DELETE FROM daily_newsletters
+      WHERE publish_date < $1
+    `;
+    const result = await pool.query(query, [date]);
+    return { count: result.rowCount };
+  },
