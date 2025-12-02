@@ -39,7 +39,7 @@ export async function generateNewsletterContent(date) {
    - Use a conversational, slightly witty tone
    - Example: "Bitcoin decided to test our collective blood pressure today..."
 
-2. **Market Overview** (250-350 words):
+2. **Market Overview** (200-250 words):
    - Major crypto price movements (BTC, ETH, top 10 alts by market cap)
    - Detailed price action: opening, high, low, closing prices
    - Market sentiment and what's driving it (fear/greed index, social sentiment)
@@ -48,7 +48,7 @@ export async function generateNewsletterContent(date) {
    - **Explain WHY things moved, not just WHAT moved**
    - Include specific percentage changes and dollar values
 
-3. **Key Developments** (250-350 words):
+3. **Key Developments** (200-250 words):
    - Important news (regulations, partnerships, hacks, launches, protocol upgrades)
    - On-chain data worth noting (whale movements, exchange flows, staking metrics)
    - Institutional moves (ETF flows, corporate treasury updates, venture funding)
@@ -57,7 +57,7 @@ export async function generateNewsletterContent(date) {
    - **Connect the dots - how do these affect the market?**
    - Provide context and historical comparisons
 
-4. **Technical Analysis** (200-250 words):
+4. **Technical Analysis** (150-200 words):
    - Multiple timeframe analysis (4H, daily, weekly)
    - Key support and resistance levels with specific prices
    - Technical indicators (RSI, MACD, moving averages) explained simply
@@ -67,7 +67,7 @@ export async function generateNewsletterContent(date) {
    - **Make it actionable, not just chart jargon**
    - Include risk levels and invalidation points
 
-5. **Conclusion** (100-150 words):
+5. **Conclusion** (80-100 words):
    - Big picture takeaway
    - What to watch tomorrow
    - Reassuring perspective (especially if markets are rough)
@@ -75,7 +75,7 @@ export async function generateNewsletterContent(date) {
 
 **STYLE GUIDELINES**:
 - Use real-time data from Google Search
-- 900-1200 words total (aim for comprehensive analysis)
+- 700-900 words total (concise but comprehensive)
 - Write like you're explaining to a smart friend over coffee
 - Use analogies and metaphors when helpful
 - Include specific numbers and data points
@@ -114,7 +114,7 @@ Write the complete newsletter now:`;
     const formatPrompt = `Convert the following newsletter content into structured JSON format.
 
 Extract:
-- Title (create one based on the date: ${date})
+- Title (create a compelling title in format: "Daily Market Pulse - [Date]: [Main Market Story/Theme]". Example: "Daily Market Pulse - December 3, 2025: Bitcoin Surges Past $100K as Institutional Demand Soars")
 - Hook (the opening 1-2 sentences)
 - Sections (break down into: Market Overview, Key Developments, Technical Analysis, etc.)
 - Conclusion (the closing summary)
@@ -136,7 +136,7 @@ Return the structured JSON now:`;
           properties: {
             title: {
               type: 'string',
-              description: 'Newsletter title, e.g., "Daily Market Pulse - December 1, 2025"'
+              description: 'Newsletter title with date and main market theme, e.g., "Daily Market Pulse - December 1, 2025: Crypto Markets Rally on Fed Rate Cut Hopes"'
             },
             hook: {
               type: 'string',
