@@ -39,25 +39,35 @@ export async function generateNewsletterContent(date) {
    - Use a conversational, slightly witty tone
    - Example: "Bitcoin decided to test our collective blood pressure today..."
 
-2. **Market Overview** (150-200 words):
-   - Major crypto price movements (BTC, ETH, major alts)
-   - Market sentiment and what's driving it
-   - Trading volumes and notable metrics
+2. **Market Overview** (250-350 words):
+   - Major crypto price movements (BTC, ETH, top 10 alts by market cap)
+   - Detailed price action: opening, high, low, closing prices
+   - Market sentiment and what's driving it (fear/greed index, social sentiment)
+   - Trading volumes and notable metrics (24h volume, market cap changes)
+   - Cross-market correlations (stocks, gold, DXY)
    - **Explain WHY things moved, not just WHAT moved**
+   - Include specific percentage changes and dollar values
 
-3. **Key Developments** (150-200 words):
-   - Important news (regulations, partnerships, hacks, launches)
-   - On-chain data worth noting
-   - Institutional moves
+3. **Key Developments** (250-350 words):
+   - Important news (regulations, partnerships, hacks, launches, protocol upgrades)
+   - On-chain data worth noting (whale movements, exchange flows, staking metrics)
+   - Institutional moves (ETF flows, corporate treasury updates, venture funding)
+   - DeFi trends (TVL changes, new protocols, yields)
+   - NFT and gaming highlights if significant
    - **Connect the dots - how do these affect the market?**
+   - Provide context and historical comparisons
 
-4. **Technical Analysis** (100-150 words):
-   - Key levels to watch
-   - Technical indicators (but explain them simply)
-   - Short-term outlook
+4. **Technical Analysis** (200-250 words):
+   - Multiple timeframe analysis (4H, daily, weekly)
+   - Key support and resistance levels with specific prices
+   - Technical indicators (RSI, MACD, moving averages) explained simply
+   - Chart patterns and what they suggest
+   - Volume analysis and market structure
+   - Short-term and medium-term outlook
    - **Make it actionable, not just chart jargon**
+   - Include risk levels and invalidation points
 
-5. **Conclusion** (50-100 words):
+5. **Conclusion** (100-150 words):
    - Big picture takeaway
    - What to watch tomorrow
    - Reassuring perspective (especially if markets are rough)
@@ -65,7 +75,7 @@ export async function generateNewsletterContent(date) {
 
 **STYLE GUIDELINES**:
 - Use real-time data from Google Search
-- 500-700 words total
+- 900-1200 words total (aim for comprehensive analysis)
 - Write like you're explaining to a smart friend over coffee
 - Use analogies and metaphors when helpful
 - Include specific numbers and data points
