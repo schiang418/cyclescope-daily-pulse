@@ -183,9 +183,6 @@ export const Newsletter = {
   getPool() {
     return pool;
   },
-};
-
-export default Newsletter;
 
   /**
    * Get all newsletters
@@ -224,3 +221,6 @@ export default Newsletter;
     const result = await pool.query(query, [date]);
     return { count: result.rowCount };
   },
+};
+
+export default Newsletter;
