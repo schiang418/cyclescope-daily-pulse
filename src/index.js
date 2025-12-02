@@ -102,7 +102,12 @@ app.listen(PORT, () => {
   logger.info(`Health check: http://localhost:${PORT}/health`);
   
   // Start automatic cleanup scheduler
-  startCleanupScheduler();
+  try {
+    startCleanupScheduler();
+  } catch (error) {
+    logger.error('Failed to start cleanup scheduler:', error.message);
+    // Don't crash the server if scheduler fails
+  }
 });
 
 // Graceful shutdown
