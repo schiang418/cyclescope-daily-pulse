@@ -78,6 +78,18 @@ export const Newsletter = {
   },
 
   /**
+   * Get newsletter by ID
+   */
+  async getById(id) {
+    const query = `
+      SELECT * FROM daily_newsletters
+      WHERE id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0] || null;
+  },
+
+  /**
    * Get newsletter by publish date
    */
   async getByDate(publishDate) {
