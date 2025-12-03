@@ -52,7 +52,7 @@ You are writing "Daily Market Pulse" newsletter for ${date}.
 - Utilize exclamation points and engaging questions to punctuate your analysis and maintain reader interest.
 - Conclude the newsletter with a subtle yet clear call to action.
 - Use real-time data from Google Search.
-- 700-900 words total (concise but comprehensive).
+- 1000-1100 words total (comprehensive and detailed).
 - Include specific numbers, percentage changes, and data points.
 - Always cite sources for specific claims.
 
