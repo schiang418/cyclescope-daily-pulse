@@ -49,21 +49,27 @@ router.post('/generate', async (req, res) => {
 
     console.log(`📨 API request: Generate newsletter for ${date}`);
 
-    // Generate newsletter (async, may take 30-60 seconds)
-    const newsletter = await generateDailyNewsletter(date);
-
-    res.json({
+    // Return immediately with 202 Accepted and generate in background
+    // This prevents HTTP timeout issues during long-running generation (4-5 minutes)
+    res.status(202).json({
       success: true,
-      newsletter: {
-        id: newsletter.id,
-        publish_date: newsletter.publish_date,
-        title: newsletter.title,
-        audio_url: newsletter.audio_url,
-        audio_duration_seconds: newsletter.audio_duration_seconds,
-        generation_status: newsletter.generation_status,
-        created_at: newsletter.created_at,
-      },
+      message: 'Newsletter generation started',
+      date: date,
+      status: 'generating',
+      estimated_duration: '4-5 minutes',
     });
+
+    // Generate newsletter in background (async, takes 4-5 minutes)
+    // Don't await - let it run independently
+    generateDailyNewsletter(date)
+      .then(newsletter => {
+        console.log(`✅ Newsletter generation completed for ${date}`);
+        console.log(`   - Title: ${newsletter.title}`);
+        console.log(`   - Audio: ${newsletter.audio_duration_seconds}s`);
+      })
+      .catch(error => {
+        console.error(`❌ Newsletter generation failed for ${date}:`, error);
+      });
 
   } catch (error) {
     console.error('❌ Generate newsletter error:', error);
