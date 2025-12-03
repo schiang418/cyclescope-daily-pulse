@@ -4,8 +4,11 @@
  * Endpoints:
  * - POST /api/newsletter/generate - Generate newsletter for a specific date
  * - GET /api/newsletter/latest - Get latest newsletter
- * - GET /api/newsletter/:date - Get newsletter by date
  * - GET /api/newsletter/history - Get newsletter history
+ * - GET /api/newsletter/:date - Get newsletter by date
+ * 
+ * IMPORTANT: Specific routes (/latest, /history) must be defined BEFORE /:date
+ * to avoid being caught by the date parameter route.
  */
 
 import express from 'express';
@@ -98,8 +101,41 @@ router.get('/latest', async (req, res) => {
 });
 
 /**
+ * GET /api/newsletter/history
+ * Get newsletter history (last 30 days by default)
+ * 
+ * IMPORTANT: Must be defined BEFORE /:date route to avoid being caught by date parameter
+ */
+router.get('/history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+
+    if (limit < 1 || limit > 365) {
+      return res.status(400).json({ error: 'Limit must be between 1 and 365' });
+    }
+
+    const newsletters = await getNewsletterHistory(limit);
+
+    res.json({
+      success: true,
+      count: newsletters.length,
+      newsletters: newsletters.map(n => formatNewsletterResponse(n, req)),
+    });
+
+  } catch (error) {
+    console.error('❌ Get newsletter history error:', error);
+    res.status(500).json({
+      error: 'Failed to retrieve newsletter history',
+      message: error.message,
+    });
+  }
+});
+
+/**
  * GET /api/newsletter/:date
  * Get newsletter by specific date
+ * 
+ * IMPORTANT: Must be defined AFTER specific routes (/latest, /history)
  */
 router.get('/:date', async (req, res) => {
   try {
@@ -131,35 +167,6 @@ router.get('/:date', async (req, res) => {
 });
 
 /**
- * GET /api/newsletter/history
- * Get newsletter history (last 30 days by default)
- */
-router.get('/history', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 30;
-
-    if (limit < 1 || limit > 365) {
-      return res.status(400).json({ error: 'Limit must be between 1 and 365' });
-    }
-
-    const newsletters = await getNewsletterHistory(limit);
-
-    res.json({
-      success: true,
-      count: newsletters.length,
-      newsletters: newsletters.map(n => formatNewsletterResponse(n, req)),
-    });
-
-  } catch (error) {
-    console.error('❌ Get newsletter history error:', error);
-    res.status(500).json({
-      error: 'Failed to retrieve newsletter history',
-      message: error.message,
-    });
-  }
-});
-
-/**
  * Format newsletter for API response
  * Fixes audio URL to use correct public domain
  */
@@ -178,16 +185,19 @@ function formatNewsletterResponse(newsletter, req) {
   return {
     id: newsletter.id,
     publish_date: newsletter.publish_date,
+    publishDate: newsletter.publish_date, // Add camelCase alias for frontend compatibility
     title: newsletter.title,
     hook: newsletter.hook,
     sections: newsletter.sections,
     conclusion: newsletter.conclusion,
     sources: newsletter.sources,
     audio_url: audioUrl,
+    audioUrl: audioUrl, // Add camelCase alias for frontend compatibility
     audio_duration_seconds: newsletter.audio_duration_seconds,
     generation_status: newsletter.generation_status,
     created_at: newsletter.created_at,
     updated_at: newsletter.updated_at,
+    updatedAt: newsletter.updated_at, // Add camelCase alias for frontend compatibility
   };
 }
 
